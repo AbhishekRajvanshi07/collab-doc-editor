@@ -22,7 +22,7 @@ Abhishek Kumar — abhishekjnv2706@gmail.com
 
 ## Live deployment
 
-- **Live URL:** _add after deploying (Render recommended — see below)_
+- **Live URL:** (https://collab-doc-editor-1-5l50.onrender.com/)
 - **Seeded test accounts:** no passwords; pick Alice Chen, Bob Martinez, or
   Carol Singh from the login screen. Alice's account starts with one
   document already shared with Bob.
