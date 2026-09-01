@@ -7,6 +7,7 @@ import { api } from "../api/client";
 import ShareModal from "../components/ShareModal";
 import CommentsPanel from "../components/CommentsPanel";
 import VersionHistoryModal from "../components/VersionHistoryModal";
+import "../style/editor.css";
 
 // Debounce helper for autosave - avoids firing a PUT on every keystroke.
 function useDebouncedCallback(callback, delay) {
