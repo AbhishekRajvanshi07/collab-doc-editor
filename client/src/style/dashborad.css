@@ -1,0 +1,227 @@
+:root {
+  --paper: #F1EFE9;
+  --surface: #FFFFFF;
+  --ink: #211E1B;
+  --ink-muted: #6B6660;
+  --hairline: #DEDAD1;
+  --steel: #3E5C6B;
+  --steel-dark: #2C4552;
+  --moss: #5B6E4F;
+  --moss-bg: #EAEEE4;
+  --rust: #8C3B2E;
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 48px 24px 96px;
+}
+
+/* ---------- Topbar ---------- */
+
+.topbar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 20px;
+  margin-bottom: 40px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.topbar h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 28px;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 14px;
+}
+
+/* ---------- Buttons ---------- */
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--steel);
+  cursor: pointer;
+}
+
+.link-button:hover { color: var(--steel-dark); }
+
+.link-button.danger { color: var(--rust); }
+.link-button.danger:hover { color: #6E2E24; }
+
+button.primary {
+  background: var(--steel);
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+button.primary:hover { background: var(--steel-dark); }
+
+.toolbar-row button:not(.primary) {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  padding: 10px 18px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.toolbar-row button:not(.primary):hover {
+  border-color: var(--ink-muted);
+}
+
+.toolbar-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+button:focus-visible,
+.link-button:focus-visible {
+  outline: 2px solid var(--steel);
+  outline-offset: 2px;
+}
+
+/* ---------- Sections ---------- */
+
+section { margin-bottom: 48px; }
+
+section h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 18px;
+  margin: 0 0 4px;
+}
+
+.muted { color: var(--ink-muted); }
+.small { font-size: 13px; }
+
+section > .muted {
+  font-size: 15px;
+  font-style: italic;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* ---------- Document list ---------- */
+
+.doc-list {
+  border-top: 1px solid var(--hairline);
+}
+
+.doc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--hairline);
+  padding: 4px 0;
+}
+
+.doc-row-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  padding: 16px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.doc-row-main:hover { background: #EAE7DF; }
+
+.doc-row-main strong {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.doc-row-main .muted.small {
+  display: block;
+  margin-top: 2px;
+}
+
+.doc-row-main > div:last-child {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.badge {
+  background: var(--moss-bg);
+  color: var(--moss);
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+.doc-row .link-button.danger {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  padding: 8px;
+  font-size: 13px;
+}
+
+.doc-row:hover .link-button.danger,
+.doc-row .link-button.danger:focus-visible {
+  opacity: 1;
+}
+
+/* ---------- Error ---------- */
+
+.error-banner {
+  background: #F5E6E2;
+  color: var(--rust);
+  border: 1px solid #E3C5BC;
+  border-radius: 4px;
+  padding: 12px 16px;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 560px) {
+  .page { padding: 32px 16px 64px; }
+  .doc-row-main { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .doc-row-main > div:last-child { align-self: flex-start; }
+  .doc-row .link-button.danger { opacity: 1; }
+}
