@@ -60,6 +60,7 @@ export default function ShareModal({ docId, onClose }) {
           </select>
           <select value={permission} onChange={(e) => setPermission(e.target.value)}>
             <option value="edit">Can edit</option>
+            <option value="comment">Can comment</option>
             <option value="view">Can view</option>
           </select>
           <button type="submit" className="primary" disabled={!selectedUserId}>

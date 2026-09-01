@@ -53,6 +53,30 @@ const SCHEMA_SQL = `
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE(document_id, user_id)
   );
+
+  -- Periodic snapshots of a document's title/content, used for the
+  -- version history stretch feature. Snapshots are throttled server-side
+  -- (see maybeSnapshotVersion in routes/documents.js) rather than taken
+  -- on every autosave tick, so this table doesn't grow unboundedly.
+  CREATE TABLE IF NOT EXISTS document_versions (
+    id SERIAL PRIMARY KEY,
+    document_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_by INTEGER NOT NULL REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+
+  -- Document-level comment threads (the "commenting" stretch feature).
+  -- Not inline/text-anchored suggestions - a simpler discussion thread
+  -- attached to the whole document, scoped to fit the time budget.
+  CREATE TABLE IF NOT EXISTS comments (
+    id SERIAL PRIMARY KEY,
+    document_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    body TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
 `;
 
 // Idempotent bootstrap: safe to call on every server start. Creates the

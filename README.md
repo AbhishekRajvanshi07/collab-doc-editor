@@ -77,6 +77,25 @@ Open http://localhost:5173, pick "Alice Chen" (or any seeded user), and:
   right) and log in as Bob to see it under "Shared with me"
 - Try granting **view-only** access and confirm the toolbar disables for
   the viewer
+- Try granting **comment-only** access instead — the recipient can view
+  and post comments but still can't edit content
+- Click **Comments** to open the comment thread on a document
+- Click **History** to see saved snapshots and restore an earlier one
+  (snapshots are throttled to once per 5 minutes per document, so you
+  won't see one on a document you just created)
+- Click **Export .md** or **Export PDF** to download the document
+- Open the same document as two different users (e.g. two browser
+  windows) — each user shows up as a small avatar in the top bar on the
+  other's screen within a few seconds (real-time presence, polling-based)
+
+## Optional stretch features
+
+All five suggested stretch enhancements are implemented: real-time
+presence indicators, commenting, version history, PDF/Markdown export,
+and a third `comment` sharing tier. Each was deliberately scoped to a
+smaller, real version rather than a shallow imitation of the full
+feature — see the "Stretch features" section in `ARCHITECTURE.md` for
+exactly how and why.
 
 ## Running tests
 
@@ -94,6 +113,10 @@ database):
 ```bash
 TEST_DATABASE_URL=postgres://localhost/collabdocs_test npm test
 ```
+
+18 tests total: 10 covering the core sharing/upload flows, 8 covering
+the stretch features (comment-tier permissions, version restore, both
+export formats, and presence).
 
 ## Seeded accounts
 

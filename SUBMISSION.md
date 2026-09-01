@@ -22,7 +22,8 @@ Abhishek Kumar — abhishekjnv2706@gmail.com
 
 ## Live deployment
 
-- **Live URL:** (https://collab-doc-editor-1-5l50.onrender.com/)
+- **Live URL:** https://collab-doc-editor-1-5l50.onrender.com
+- **API URL:** https://collab-doc-editor-pn3j.onrender.com (frontend talks to this; no need to visit directly)
 - **Seeded test accounts:** no passwords; pick Alice Chen, Bob Martinez, or
   Carol Singh from the login screen. Alice's account starts with one
   document already shared with Bob.
@@ -43,13 +44,34 @@ Abhishek Kumar — abhishekjnv2706@gmail.com
 - 5 passing automated tests covering the sharing/permission logic
   (`server/npm test`)
 
+## Optional stretch features (all 5 added)
+
+- **Real-time collaboration indicators** - shows who else is currently
+  viewing a document (polling-based, not a full WebSocket co-editing
+  layer)
+- **Commenting** - a document-level comment thread (owner/editors/
+  commenters can post; view-only cannot)
+- **Document version history** - periodic snapshots, with restore
+  (restoring itself creates a new snapshot, so it's undoable)
+- **Export to PDF and Markdown** - both generated server-side from the
+  document's content
+- **Role-based sharing beyond view/edit** - added a third `comment`
+  permission tier (can view + comment, cannot edit content), enforced
+  server-side like the existing tiers
+
+Each is deliberately scoped down from the "full" version of that feature
+- see the "Stretch features" section in `ARCHITECTURE.md` for exactly
+how and why. All 18 automated tests (10 original + 8 new) pass.
+
 ## What's incomplete / deliberately deprioritized
 
-See "Known limitations" in `README.md` and the "What I deliberately did
-not build" section in `ARCHITECTURE.md`. In short: no real-time
-co-editing, no version history, no password auth, no `.docx` import.
-All four were either explicitly optional in the brief or a
-disproportionate time sink relative to what they'd demonstrate.
+- No real password/session auth - mocked seeded-user login instead,
+  which the brief explicitly allows for this scope
+- No `.docx` file upload - only `.txt`/`.md` are supported for import
+- No true concurrent-edit conflict resolution (OT/CRDT) - two people
+  editing the same document at the exact same moment can still overwrite
+  each other; the presence indicator helps a user notice someone else is
+  there, but doesn't merge simultaneous edits
 
 ## What I'd build next with another 2-4 hours
 
@@ -57,4 +79,5 @@ disproportionate time sink relative to what they'd demonstrate.
 2. Optimistic locking (or a lightweight CRDT) so two simultaneous editors
    on the same document don't silently overwrite each other
 3. "Last edited by" attribution shown on shared documents
-4. Basic document version history (even just periodic snapshots)
+4. Inline, text-anchored comments (true suggestion mode) rather than a
+   document-level thread

@@ -168,3 +168,206 @@ describe("file upload validation", () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe("comment permission tier", () => {
+  let aliceId, bobId, carolId, docId;
+
+  beforeAll(async () => {
+    const users = await request(app).get("/api/users");
+    aliceId = users.body.find((u) => u.name.startsWith("Alice")).id;
+    bobId = users.body.find((u) => u.name.startsWith("Bob")).id;
+    carolId = users.body.find((u) => u.name.startsWith("Carol")).id;
+
+    const created = await request(app)
+      .post("/api/documents")
+      .set("x-user-id", aliceId)
+      .send({ title: "Comment tier doc" });
+    docId = created.body.id;
+  });
+
+  test("a 'comment' share can read and post comments, but not edit content", async () => {
+    const share = await request(app)
+      .post(`/api/documents/${docId}/shares`)
+      .set("x-user-id", aliceId)
+      .send({ userId: bobId, permission: "comment" });
+    expect(share.status).toBe(201);
+
+    const read = await request(app).get(`/api/documents/${docId}`).set("x-user-id", bobId);
+    expect(read.status).toBe(200);
+    expect(read.body.access).toBe("comment");
+
+    const edit = await request(app)
+      .put(`/api/documents/${docId}`)
+      .set("x-user-id", bobId)
+      .send({ content: "<p>nope</p>" });
+    expect(edit.status).toBe(403);
+
+    const comment = await request(app)
+      .post(`/api/documents/${docId}/comments`)
+      .set("x-user-id", bobId)
+      .send({ body: "Looks good to me" });
+    expect(comment.status).toBe(201);
+  });
+
+  test("a plain 'view' share cannot post comments", async () => {
+    await request(app)
+      .post(`/api/documents/${docId}/shares`)
+      .set("x-user-id", aliceId)
+      .send({ userId: carolId, permission: "view" });
+
+    const comment = await request(app)
+      .post(`/api/documents/${docId}/comments`)
+      .set("x-user-id", carolId)
+      .send({ body: "Trying to comment anyway" });
+    expect(comment.status).toBe(403);
+  });
+
+  test("a comment's author can delete it; another non-owner user cannot", async () => {
+    const posted = await request(app)
+      .post(`/api/documents/${docId}/comments`)
+      .set("x-user-id", bobId)
+      .send({ body: "Delete me later" });
+
+    const deniedDelete = await request(app)
+      .delete(`/api/documents/${docId}/comments/${posted.body.id}`)
+      .set("x-user-id", carolId);
+    expect(deniedDelete.status).toBe(403);
+
+    const allowedDelete = await request(app)
+      .delete(`/api/documents/${docId}/comments/${posted.body.id}`)
+      .set("x-user-id", bobId);
+    expect(allowedDelete.status).toBe(204);
+  });
+});
+
+describe("version history", () => {
+  let aliceId, docId;
+
+  beforeAll(async () => {
+    const users = await request(app).get("/api/users");
+    aliceId = users.body.find((u) => u.name.startsWith("Alice")).id;
+
+    const created = await request(app)
+      .post("/api/documents")
+      .set("x-user-id", aliceId)
+      .send({ title: "Version doc", content: "<p>original</p>" });
+    docId = created.body.id;
+  });
+
+  test("restoring a manually-inserted snapshot rolls content back, and snapshots the pre-restore state too", async () => {
+    // Insert a snapshot directly, bypassing the 5-minute throttle, so the
+    // test doesn't need to wait for real time to pass.
+    const snap = await pool.query(
+      "INSERT INTO document_versions (document_id, title, content, created_by) VALUES ($1, $2, $3, $4) RETURNING id",
+      [docId, "Version doc", "<p>original</p>", aliceId]
+    );
+
+    await request(app)
+      .put(`/api/documents/${docId}`)
+      .set("x-user-id", aliceId)
+      .send({ content: "<p>edited</p>" });
+
+    const restore = await request(app)
+      .post(`/api/documents/${docId}/versions/${snap.rows[0].id}/restore`)
+      .set("x-user-id", aliceId);
+
+    expect(restore.status).toBe(200);
+    expect(restore.body.content).toBe("<p>original</p>");
+
+    const versions = await request(app)
+      .get(`/api/documents/${docId}/versions`)
+      .set("x-user-id", aliceId);
+    // the original inserted snapshot, plus one auto-created right before the restore
+    expect(versions.body.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe("export", () => {
+  let aliceId, docId;
+
+  beforeAll(async () => {
+    const users = await request(app).get("/api/users");
+    aliceId = users.body.find((u) => u.name.startsWith("Alice")).id;
+
+    const created = await request(app)
+      .post("/api/documents")
+      .set("x-user-id", aliceId)
+      .send({
+        title: "Export doc",
+        content: "<h1>Heading</h1><p>Some <strong>bold</strong> text.</p><ul><li>one</li></ul>",
+      });
+    docId = created.body.id;
+  });
+
+  test("markdown export contains the expected structure", async () => {
+    const res = await request(app)
+      .get(`/api/documents/${docId}/export?format=md`)
+      .set("x-user-id", aliceId);
+
+    expect(res.status).toBe(200);
+    expect(res.headers["content-type"]).toContain("text/markdown");
+    expect(res.text).toContain("# Export doc");
+    expect(res.text).toContain("# Heading");
+    expect(res.text).toContain("**bold**");
+    expect(res.text).toContain("- one");
+  });
+
+  test("pdf export returns a PDF file", async () => {
+    const res = await request(app)
+      .get(`/api/documents/${docId}/export?format=pdf`)
+      .set("x-user-id", aliceId)
+      .buffer(true)
+      .parse((res, callback) => {
+        res.setEncoding("binary");
+        let data = "";
+        res.on("data", (chunk) => (data += chunk));
+        res.on("end", () => callback(null, Buffer.from(data, "binary")));
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.headers["content-type"]).toBe("application/pdf");
+    expect(res.body.slice(0, 4).toString()).toBe("%PDF"); // PDF file signature
+  });
+
+  test("a user with no access cannot export", async () => {
+    const users = await request(app).get("/api/users");
+    const carolId = users.body.find((u) => u.name.startsWith("Carol")).id;
+
+    const res = await request(app)
+      .get(`/api/documents/${docId}/export?format=md`)
+      .set("x-user-id", carolId);
+    expect(res.status).toBe(403);
+  });
+});
+
+describe("presence", () => {
+  let aliceId, bobId, docId;
+
+  beforeAll(async () => {
+    const users = await request(app).get("/api/users");
+    aliceId = users.body.find((u) => u.name.startsWith("Alice")).id;
+    bobId = users.body.find((u) => u.name.startsWith("Bob")).id;
+
+    const created = await request(app)
+      .post("/api/documents")
+      .set("x-user-id", aliceId)
+      .send({ title: "Presence doc" });
+    docId = created.body.id;
+    await request(app)
+      .post(`/api/documents/${docId}/shares`)
+      .set("x-user-id", aliceId)
+      .send({ userId: bobId, permission: "edit" });
+  });
+
+  test("pinging presence surfaces other active users, but not yourself", async () => {
+    await request(app).post(`/api/documents/${docId}/presence`).set("x-user-id", aliceId);
+    const bobPing = await request(app)
+      .post(`/api/documents/${docId}/presence`)
+      .set("x-user-id", bobId);
+
+    expect(bobPing.status).toBe(200);
+    const activeIds = bobPing.body.active.map((u) => u.id);
+    expect(activeIds).toContain(aliceId);
+    expect(activeIds).not.toContain(bobId);
+  });
+});
